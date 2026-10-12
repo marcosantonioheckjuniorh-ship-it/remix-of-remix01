@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/pix/create')({
           }
 
           const baseUrl = process.env.VELANI_BASE_URL ?? 'https://api.velanipagamentos.com.br/api/v1/api-gateway/v1'
-          const secretKey = process.env.VELANI_SECRET_KEY ?? process.env.STRIPE_LIVE_API_KEY
+          const secretKey = process.env.STRIPE_LIVE_API_KEY ?? process.env.VELANI_SECRET_KEY
           if (!secretKey) {
             return new Response(JSON.stringify({ error: 'Velani secret key not configured' }), {
               status: 500, headers: { 'Content-Type': 'application/json' },
