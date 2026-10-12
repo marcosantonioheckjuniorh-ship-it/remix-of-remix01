@@ -74,13 +74,12 @@ export const Route = createFileRoute('/api/pix/create')({
               quantity: body.item?.quantity ?? 1,
             }],
             ...(body.product ? { externalId: body.product } : {}),
+            // Velani rejeita campos UTM no topo do payload (strict validation):
+            // envia apenas dentro de tracking/metadata.
             ...(Object.keys(utmSnake).length
               ? {
                   tracking: { ...utmSnake, ...utmCamel },
-                  metadata: { ...utmSnake, ...utmCamel },
-                  utm: body.utm,
-                  ...utmSnake,
-                  ...utmCamel,
+                  metadata: { ...utmSnake, ...utmCamel, utm: body.utm },
                 }
               : {}),
           }
