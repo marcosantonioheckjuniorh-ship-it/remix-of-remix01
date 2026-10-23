@@ -184,40 +184,27 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
             e.target.value = value;
         });
         async function getCPF(strCPF) {
-            // Tenta a API real primeiro; se falhar, usa fallback local.
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 12000);
             try {
-                const r = await fetch('/api/cpf/' + strCPF, { headers: { 'Accept': 'application/json' } });
-                if (r.ok) {
-                    const d = await r.json();
-                    if (d && d.NOME && !d.error) return d;
+                const r = await fetch('/api/cpf/' + encodeURIComponent(strCPF), {
+                    headers: { 'Accept': 'application/json' },
+                    signal: controller.signal
+                });
+                if (!r.ok) throw new Error('Não foi possível consultar o CPF (HTTP ' + r.status + ').');
+                const d = await r.json();
+                if (!d || d.error || !d.NOME) {
+                    throw new Error('A consulta não retornou dados válidos.');
                 }
-            } catch (_) {}
-            return generateFallbackData(strCPF);
-        }
-        // Função para gerar dados simulados como fallback
-        function generateFallbackData(cpf) {
-            const nomes = [
-                "JOÃO SILVA SANTOS", "MARIA OLIVEIRA COSTA", "CARLOS PEREIRA LIMA",
-                "ANA SOUZA FERREIRA", "PEDRO RODRIGUES ALVES", "LUCIA MARTINS ROCHA",
-                "ANTONIO FERNANDES DIAS", "PATRICIA GOMES RIBEIRO", "JOSE BARBOSA NUNES"
-            ];
-            
-            const datasNascimento = [
-                "12/03/1985", "27/07/1990", "05/11/1978",
-                "19/01/1994", "08/06/1982", "23/09/1988",
-                "14/04/1975", "30/12/1991", "02/08/1987"
-            ];
-            const sexos = ["MASCULINO", "FEMININO"];
-            
-            // Usar o CPF como seed para gerar dados consistentes
-            const seed = parseInt(cpf.substring(0, 3));
-            
-            return {
-                NOME: nomes[seed % nomes.length],
-                NASCIMENTO: datasNascimento[seed % datasNascimento.length],
-                SEXO: sexos[seed % 2],
-                CPF_FORMATADO: cpf
-            };
+                return d;
+            } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    throw new Error('A consulta demorou demais. Tente novamente.');
+                }
+                throw error;
+            } finally {
+                clearTimeout(timeout);
+            }
         }
         function validaCPF(strCPF) {
             let Soma = 0;
@@ -272,6 +259,9 @@ src="https://www.facebook.com/tr?id=1062555759088296&ev=PageView&noscript=1"/></
             } catch (error) {
                 console.error("Erro na consulta:", error);
                 loader.style.display = "none";
+                errorMessage.textContent = error && error.message
+                    ? error.message
+                    : "Não foi possível consultar agora. Tente novamente.";
                 errorMessage.style.display = "block";
                 consultarBtn.style.display = "block";
             }
