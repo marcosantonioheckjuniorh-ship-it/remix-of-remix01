@@ -28,7 +28,7 @@ export const Route = createFileRoute('/api/pix/create')({
               status: 500, headers: { 'Content-Type': 'application/json' },
             })
           }
-          const secretKey = process.env.STRIPE_LIVE_API_KEY ?? process.env.VELANI_SECRET_KEY
+          const secretKey = process.env.VELANI_SECRET_KEY ?? process.env.STRIPE_LIVE_API_KEY
           if (!secretKey) {
             return new Response(JSON.stringify({ error: 'Velani secret key not configured' }), {
               status: 500, headers: { 'Content-Type': 'application/json' },
@@ -89,14 +89,22 @@ export const Route = createFileRoute('/api/pix/create')({
               : {}),
           }
 
-          const upstream = await fetch(`${baseUrl}/transactions`, {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 15000)
+          let upstream: Response
+          try {
+            upstream = await fetch(`${baseUrl.replace(/\\/$/, '')}/transactions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'x-api-key': secretKey,
             },
             body: JSON.stringify(velaniPayload),
+            signal: controller.signal,
           })
+          } finally {
+            clearTimeout(timeout)
+          }
 
           const text = await upstream.text()
           let result: any
